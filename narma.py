@@ -61,8 +61,8 @@ rN = 50
 NR = 2
 
 mc_threshold = 0.1
-TWashout = 200
-TTrain = 3000
+TWashout = 1000
+TTrain = 500
 TTest = 1000
 TTot = TWashout + TTrain + TTest
 
@@ -70,11 +70,11 @@ TRuns = 50
 
 NARMA = 5
 # run NARMA on
-# - an N=64 reservoir? - base_case
-# - an N=64 restricted reservoir? restricted_case
-# - an N=64 rr w/ 2 timescales on the circuit model circuit_case
-# - an N=64 rr w/ 2 timescales on the swarm model swarm_case
-# - an N=64 rr w/ 2 timescales on the beacon model beacon_case
+# - an N=100 reservoir? - base_case
+# - an N=100 restricted reservoir? restricted_case
+# - an N=100 rr w/ 2 timescales on the circuit model circuit_case
+# - an N=100 rr w/ 2 timescales on the swarm model swarm_case
+# - an N=100 rr w/ 2 timescales on the beacon model beacon_case
 
 errordf = pd.DataFrame(columns=['base train', 'base test'])
 
