@@ -41,7 +41,7 @@ def run_narma(NARMA, T, u, debug=False):
     if(debug):
         print('u =', u)
         print('y =', y)
-    return y
+    return [0] + y
 
 
 # def get_narma_output(shift):
@@ -62,13 +62,13 @@ NR = 2
 
 mc_threshold = 0.1
 TWashout = 200
-TTrain = 1000
+TTrain = 3000
 TTest = 1000
 TTot = TWashout + TTrain + TTest
 
 TRuns = 50
 
-NARMA = 10
+NARMA = 5
 # run NARMA on
 # - an N=64 reservoir? - base_case
 # - an N=64 restricted reservoir? restricted_case
@@ -80,29 +80,30 @@ errordf = pd.DataFrame(columns=['base train', 'base test'])
 
 for i in range(TRuns):
     print(i)
-    seed = i
     #create reservoirs
-    base_case = nymph.NymphESN(1, N, 1, seed=seed)
+    f = np.tanh
+    base_case = nymph.NymphESN(1, N, 1, seed=i, f=f, rho=2)
     W_base = rm.create_random_esn_weights(N)
-    restricted_case = nymph.NymphESN(1, N, 1, seed=seed)
+    restricted_case = nymph.NymphESN(1, N, 1, seed=i, f=f, rho=2)
     W_restricted = rm.create_restricted_esn_weights(N, rN, NR)
     # print(W_restricted)
-    circuit_case = nymph.NymphESN(1, N, 1, seed=seed)
+    circuit_case = nymph.NymphESN(1, N, 1, seed=i, f=f, rho=2)
     W_circuit = rm.zero_Wn(W_restricted, rN, 1)
     # print(W_circuit)
-    swarm_case = nymph.NymphESN(1, N, 1, seed=seed)
+    swarm_case = nymph.NymphESN(1, N, 1, seed=i, f=f, rho=2)
     W_swarm = rm.zero_all_On(W_circuit, rN, 1)
     W_swarm = rm.zero_On_all(W_swarm, rN, 1)
     # print(W_swarm)
-    gondor_case = nymph.NymphESN(1, N, 1, seed=seed)
+    gondor_case = nymph.NymphESN(1, N, 1, seed=i, f=f, rho=2)
     Wu_restricted = rm.create_restricted_esn_input_weights(N, 1)
     Wu_gondor = rm.zero_Un(Wu_restricted, rN, 1)
     # print(np.array_equal(W_swarm, W_circuit))
     W_gondor = rm.zero_On_all(W_circuit, rN, 1)
     # create weight matrices
 
-    input = get_u(T=TTot, seed=seed)
+    input = get_u(T=TTot, seed=i)
     vtarget = run_narma(NARMA, TTot, input, debug=False)
+    # vtarget = np.hstack((np.array([0, 0, 0]), input[:-3]))
     vtarget_np = np.array(vtarget)
 
     base_case.set_data_lengths(TWashout, TTrain, TTest)
@@ -135,26 +136,26 @@ for i in range(TRuns):
     swarm_case.get_output()
     gondor_case.get_output()
 
-    btraining, btesting = base_case.get_error(vtarget_np[TWashout:], errorfunc.ErrorFuncs.nmsre)
-    rtraining, rtesting = restricted_case.get_error(vtarget_np[TWashout:], errorfunc.ErrorFuncs.nmsre)
-    ctraining, ctesting = circuit_case.get_error(vtarget_np[TWashout:], errorfunc.ErrorFuncs.nmsre)
-    straining, stesting = swarm_case.get_error(vtarget_np[TWashout:], errorfunc.ErrorFuncs.nmsre)
-    gtraining, gtesting = gondor_case.get_error(vtarget_np[TWashout:], errorfunc.ErrorFuncs.nmsre)
+    btraining, btesting = base_case.get_error(vtarget_np, errorfunc.ErrorFuncs.nrmse)
+    rtraining, rtesting = restricted_case.get_error(vtarget_np, errorfunc.ErrorFuncs.nrmse)
+    ctraining, ctesting = circuit_case.get_error(vtarget_np, errorfunc.ErrorFuncs.nrmse)
+    straining, stesting = swarm_case.get_error(vtarget_np, errorfunc.ErrorFuncs.nrmse)
+    gtraining, gtesting = gondor_case.get_error(vtarget_np, errorfunc.ErrorFuncs.nrmse)
     # get_error does not return numbers
     # print(rtraining)
     # print(ctraining)
     # print(straining)
     # print(gtraining)
-    errordf.at[seed, 'base train'] = btraining
-    errordf.at[seed, 'base test'] = btesting
-    errordf.at[seed, 'restr train'] = rtraining
-    errordf.at[seed, 'restr test'] = rtesting
-    errordf.at[seed, 'circ train'] = ctraining
-    errordf.at[seed, 'circ test'] = ctesting
-    errordf.at[seed, 'swarm train'] = straining
-    errordf.at[seed, 'swarm test'] = stesting
-    errordf.at[seed, 'gondor train'] = gtraining
-    errordf.at[seed, 'gondor test'] = gtesting
+    errordf.at[i, 'base train'] = btraining
+    errordf.at[i, 'base test'] = btesting
+    errordf.at[i, 'restr train'] = rtraining
+    errordf.at[i, 'restr test'] = rtesting
+    errordf.at[i, 'circ train'] = ctraining
+    errordf.at[i, 'circ test'] = ctesting
+    errordf.at[i, 'swarm train'] = straining
+    errordf.at[i, 'swarm test'] = stesting
+    errordf.at[i, 'gondor train'] = gtraining
+    errordf.at[i, 'gondor test'] = gtesting
     # # print(i)
     
 #plot errors
